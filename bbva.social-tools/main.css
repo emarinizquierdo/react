@@ -1,0 +1,15 @@
+body.autoresize{
+	/*height: 100%;*/
+	min-height: initial!important;
+	overflow: auto!important;
+}
+
+.bbva-hpd-module.autoresize{
+	/*overflow: auto;*/
+	height: 100%;
+	position: relative;
+}
+
+.bbva-hpd-module .transcluded{
+	position: relative;
+}
