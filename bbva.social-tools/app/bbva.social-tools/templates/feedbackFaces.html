@@ -1,27 +1,19 @@
-<div class="user-feedback-container">
-    <div ng-show="!error" class="user-feedback-success-message">
-        <span ng-bind-html="'USER_FEEDBACK.SUCCESS' | translate:{alias:deviceAlias}"></span>
-    </div>
-    <div ng-show="error" class="user-feedback-error-message">{{'USER_FEEDBACK.ERROR' | translate}}</div>
-    <hr class="user-feedback-separator" />
-    <div class="user-feedback-legend">{{'USER_FEEDBACK.LEGEND_01' | translate}}
-        <strong>{{'USER_FEEDBACK.LEGEND_03' | translate}}</strong>
-    </div>
-    <div class="user-password-wrapper">
-        <div class="user-password-box">
-            <div class="user-rectangle">
-                <span class="user-password-text" ng-bind-html="createdDevice.userWIFI | lastdigit"></span>
-                <div class="user-square"><span class="wr-sprite user-square-img"></span></div>
-                <div class="user-help-wrapper"><span></span>
-                    <div class="user-help-text">{{'USER_FEEDBACK.USER_HELP' | translate}}</div>
-                </div>
-            </div>
-            <div class="password-rectangle">
-                <span class="user-password-text" ng-class="{'copied' : copiedClass}">{{createdDevice.password}}</span>
-                <div class="password-square"><span class="wr-sprite password-square-img"></span></div>
-            </div>
-            <div ng-if="!$root.config.isTablet" ui-zeroclip class="password-copy" zeroclip-copied="copied()" zeroclip-model="createdDevice.password">{{'USER_FEEDBACK.COPY_PASSWORD' | translate}}</div>
+<div class="feedback-container" ng-show="(tutorialSrv.slides.length < 2 || lastSlide)">
+
+        <div ng-if="!tutorialSrv.currentRate && !feedbackDone">
+            <span class="feedback-title">{{"TUTORIAL.FEEDBACK_QUIZ" | translate}}</span>
+            <ul class="faces-list">
+                <li ng-click="setFeedback(vote.negative)"> <span class="wr-sprite face-sad-icon"></span> </li>
+                <li ng-click="setFeedback(vote.neutral)"> <span class="wr-sprite face-neutral-icon"></span> </li>
+                <li ng-click="setFeedback(vote.positive)"> <span class="wr-sprite face-happy-icon"></span> </li>
+            </ul>
+        </div>
+        <div ng-if="tutorialSrv.currentRate">
+            <span class="feedback-title">{{"TUTORIAL.FEEDBACK_DONE" | translate}}</span>
+            <ul class="faces-list rating">
+                <li><span class="wr-sprite face-negative-icon" ng-class="{'active' : tutorialSrv.currentRate=='NEGATIVE'}"></span> </li>
+                <li><span class="wr-sprite face-neutro-icon" ng-class="{'active' : tutorialSrv.currentRate=='NEUTRAL'}"></span> </li>
+                <li><span class="wr-sprite face-positive-icon" ng-class="{'active' : tutorialSrv.currentRate=='POSITIVE'}"></span> </li>
+            </ul>
         </div>
     </div>
-    <div class="user-feedback-legend legend-02" ng-if="tutorialOk">{{'USER_FEEDBACK.LEGEND_02' | translate}}</div>
-</div>

@@ -9,19 +9,12 @@
         /*global require, module */
 
         return React.createClass({
-
-            incCount: function() {
-                this.props.addOne(this.props.beer);
-            },
-
             render: function() {
-                return React.createElement("li", null, " [", 
-                    this.props.count, 
-                "] ", 
-                    this.props.beer, 
-                " ", React.createElement("button", {onClick: 
-                    this.incCount
-                }, " Una más ")) ;
+                var classes = 'wr-sprite face-' + this.props.mood + '-icon';
+
+                return ( React.createElement("li", null, " ", React.createElement("span", {className: 
+                    classes
+                }, " ")) );
             }
         });
 
@@ -29,410 +22,400 @@
 
 
 })();
+
 },{}],2:[function(require,module,exports){
 (function() {
 
-    module.exports = function() {
-
-        var BeerItem = require('./BeerItem.js');
-        var beerItem = new BeerItem();
-
-        return React.createClass({
-        getInitialState: function () {
-          return { clickCount: 0 };
-        },
-        handleClick: function () {
-          this.setState(function(state) {
-            return {clickCount: state.clickCount + 1};
-          });
-        },
-        render: function () {
-          return (React.createElement("h2", {onClick: this.handleClick}, "Click me! Number of clicks: ", this.state.clickCount));
-        }
-      });
-
-    }
-
-})();
-},{"./BeerItem.js":1}],3:[function(require,module,exports){
-(function($window) {
-    'use strict'
-
-
-    var display = require('../services/display');
-
-    /**
-     * Config Class that provides methods to configure
-     * the HPD-Mobile library
-     * @param {object} properties
-     */
-    var Config = function(properties) {
-
-        this.properties = properties;
-        /** @type {object} Object used to load external libraries in synch mode */
-        this.librariesLoader = require('./librariesLoader')(this.properties);
-
-        /**
-         * Constructor of Config object.
-         * @return {[type]} [description]
-         */
-        function __init__() {
-
-            /** We have to set the environment and the remote connector to bbva-intranet */
-
-            var cssUrl =    this.properties.config.css.url
-                            
-            display.loadCSS(cssUrl);
-
-        }
-
-        __init__.call(this);
-
-    };
-
-    /**
-     * Function that brings external libraries neccessary for HPD Module 
-     * @param  {Function} onSuccess [When libraries are loaded, we call to onSuccess]
-     * @param {Function} onError [When we fail laoding libraries or calling to session or properties, we call onError]
-     * @return {[type]}            [description]
-     */
-    Config.prototype.loadLibraries = function(onSuccess, onError, synchronously) {
-
-        this.librariesLoader.loadLibraries(onSuccess, onError, synchronously);
-
-    }
-
-    /**
-     * Public start method of HPD library to start the library
-     * @return {[type]} [description]
-     */
-    Config.prototype.start = function() {
-        if (typeof this.onStart == "function") {
-            this.onStart();
-        }
-    }
-
-
-    /**
-     * Export the object through module.exports
-     * @param  {object} moduleProperties literal object that provide HPD Mobile library configuration
-     * @param  {object} properties       literal object that stores HPD properties
-     * @return {[type]}                  [description]
-     */
     module.exports = function(properties) {
-        return new Config(properties);
-    };
 
+        var Component = require('../services/component.js');
 
-})(window);
-},{"../services/display":7,"./librariesLoader":4}],4:[function(require,module,exports){
-(function($window) {
-    'use strict'
+        var constructor = function() {
 
-    /** @type {object} Helper library with http methods */
-    var http = require('../utils/http');
+            var FaceItemClass = require('./faceItem.js');
+            var FaceItem = new FaceItemClass();
 
-    /**
-     * Libraries Loader class to load asynchrously js libraries before to start the application.
-     * @param {Function}
-     */
-    var LibrariesLoader = function(properties) {
+            var FeedbackFaces = React.createClass({displayName: "FeedbackFaces",
+                getInitialState: function() {
+                    return {
+                        liked: false
+                    };
+                },
+                handleClick: function(event) {
+                    this.setState({
+                        liked: !this.state.liked
+                    });
+                },
+                render: function() {
+                    var text = this.state.liked ? 'like' : 'haven\'t liked';
+                    return ( React.createElement("div", {className: "feedback-container"}, 
+                        React.createElement("div", null, 
+                        React.createElement("span", {className: "feedback-title"}), 
+                        React.createElement("ul", {className: "faces-list"}, 
+                        React.createElement(FaceItem, {mood: "sad"}), 
+                        React.createElement(FaceItem, {mood: "neutral"}), 
+                        React.createElement(FaceItem, {mood: "happy"})
+                        ), " ")
+                        )
+                    );
+                }
+            });
 
-        this.properties = properties;
-        this.libraries = [];
-
-    };
-
-
-    /**
-     * Library to add to the list of libraries to load
-     * @param {[type]} src       [source to the library]
-     * @param {[type]} onSuccess [onSuccess callback]
-     */
-    LibrariesLoader.prototype.addLibrary = function(src, onSuccess, onError) {
-
-        if (typeof src == 'undefined') {
-            return;
-        }
-
-        var library = {
-            src: src,
-            script: null,
-            loaded: false
+            return FeedbackFaces;
         };
 
-        library.script = document.createElement('script');
-        library.script.onload = this.onLoad.bind(this, library, onSuccess, onError);
-        library.script.src = library.src;
-        document.getElementsByTagName('head')[0].appendChild(library.script);
-        this.libraries.push(library);
-    }
-
-    /**
-     * Function called when all libraries have been loaded. Furthermore, we have to be sure
-     * that "external/session" has been loaded too. In case it fails, we have to call onError
-     * @param  {[type]} onSuccess [description]
-     * @return {[type]}           [description]
-     */
-    LibrariesLoader.prototype.onLoad = function(library, onSuccess, onError) {
-
-        var i,
-            allLoaded = true;
-
-        library.loaded = true;
-
-        for (i = 0; i < this.libraries.length; i++) {
-            if (!this.libraries[i].loaded) {
-                allLoaded = false;
-            }
-        }
-
-        if (allLoaded) {
-
-            onSuccess();
-
-            //onError();
-
-        }
-    }
-
-    /**
-     * @param  {string array} libraries [asynchronous js resources to load before HPD Angular Bootstrapping]
-     * @return {[type]}
-     */
-    LibrariesLoader.prototype.loadLibraries = function(onSuccess, onError, synchronusly) {
-
-        var libraries = this.properties.config.preloadLibraries.slice();
-
-        if(!synchronusly){
-            if (libraries && libraries.length > 0) {
-                var i;
-                for (i = 0; i < libraries.length; i++) {
-                    this.addLibrary(libraries[i], onSuccess, onError);
-                }
-            }
-        }else{
-
-            recursiveLoad.call(this, onSuccess);
-
-            function recursiveLoad(onSuccess){
-                if(libraries.length > 0){
-                    this.addLibrary(libraries[0], function(){
-                        libraries.splice(0,1);
-                        recursiveLoad.call(this, onSuccess);
-                    }.bind(this))
-                }else{
-                    onSuccess();
-                }
-            }
-        }
+        return new Component(constructor, properties);
 
     }
 
-    /**
-     * Export the object through module.exports
-     * @param  {[object]} properties [description]
-     * @return {[type]}            [description]
-     */
+
+})();
+
+},{"../services/component.js":7,"./faceItem.js":1}],3:[function(require,module,exports){
+(function($window) {
+    'use strict'
+
     module.exports = function(properties) {
-        return new LibrariesLoader(properties);
+
+        var display = require('../services/display')();
+
+        /**
+         * Config Class that provides methods to configure
+         * the HPD-Mobile library
+         * @param {object} properties
+         */
+        var Config = function() {
+
+
+            /** @type {object} Object used to load external libraries in synch mode */
+            this.librariesLoader = require('./librariesLoader')(properties);
+
+            /**
+             * Constructor of Config object.
+             * @return {[type]} [description]
+             */
+            function __init__() {
+
+                /** We have to set the environment and the remote connector to bbva-intranet */
+
+                var cssUrl = properties.config.css.url;
+                display.loadCSS(cssUrl);
+
+            }
+
+            __init__.call(this);
+
+        };
+
+        /**
+         * Function that brings external libraries neccessary for HPD Module 
+         * @param  {Function} onSuccess [When libraries are loaded, we call to onSuccess]
+         * @param {Function} onError [When we fail laoding libraries or calling to session or properties, we call onError]
+         * @return {[type]}            [description]
+         */
+        Config.prototype.loadLibraries = function(libraries, onSuccess, onError, synchronously) {
+
+            this.librariesLoader.loadLibraries(libraries, onSuccess, onError, synchronously);
+
+        }
+
+        /**
+         * Public start method of HPD library to start the library
+         * @return {[type]} [description]
+         */
+        Config.prototype.start = function() {
+            if (typeof this.onStart == "function") {
+                this.onStart();
+            }
+        }
+
+        return new Config();
+
     }
 
 
 })(window);
+
+},{"../services/display":9,"./librariesLoader":4}],4:[function(require,module,exports){
+(function($window) {
+    'use strict'
+
+    module.exports = function(properties) {
+
+        /** @type {object} Helper library with http methods */
+        var http = require('../utils/http');
+
+        /**
+         * Libraries Loader class to load asynchrously js libraries before to start the application.
+         * @param {Function}
+         */
+        var LibrariesLoader = function() {
+
+            this.libraries = [];
+
+        };
+
+
+        /**
+         * Library to add to the list of libraries to load
+         * @param {[type]} src       [source to the library]
+         * @param {[type]} onSuccess [onSuccess callback]
+         */
+        LibrariesLoader.prototype.addLibrary = function(src, onSuccess, onError) {
+
+            if (typeof src == 'undefined') {
+                return;
+            }
+
+            var library = {
+                src: src,
+                script: null,
+                loaded: false
+            };
+
+            library.script = document.createElement('script');
+            library.script.onload = this.onLoad.bind(this, library, onSuccess, onError);
+            library.script.src = library.src;
+            document.getElementsByTagName('head')[0].appendChild(library.script);
+            this.libraries.push(library);
+        }
+
+        /**
+         * Function called when all libraries have been loaded. Furthermore, we have to be sure
+         * that "external/session" has been loaded too. In case it fails, we have to call onError
+         * @param  {[type]} onSuccess [description]
+         * @return {[type]}           [description]
+         */
+        LibrariesLoader.prototype.onLoad = function(library, onSuccess, onError) {
+
+            var i,
+                allLoaded = true;
+
+            library.loaded = true;
+
+            for (i = 0; i < this.libraries.length; i++) {
+                if (!this.libraries[i].loaded) {
+                    allLoaded = false;
+                }
+            }
+
+            if (allLoaded) {
+
+                onSuccess();
+
+                //onError();
+
+            }
+        }
+
+        /**
+         * @param  {string array} libraries [asynchronous js resources to load before HPD Angular Bootstrapping]
+         * @return {[type]}
+         */
+        LibrariesLoader.prototype.loadLibraries = function(libraries, onSuccess, onError, synchronusly) {
+
+            var libraries = libraries.slice();
+
+            if (!synchronusly) {
+                if (libraries && libraries.length > 0) {
+                    var i;
+                    for (i = 0; i < libraries.length; i++) {
+                        this.addLibrary(libraries[i], onSuccess, onError);
+                    }
+                }
+            } else {
+
+                recursiveLoad.call(this, onSuccess);
+
+                function recursiveLoad(onSuccess) {
+                    if (libraries.length > 0) {
+                        this.addLibrary(libraries[0], function() {
+                            libraries.splice(0, 1);
+                            recursiveLoad.call(this, onSuccess);
+                        }.bind(this))
+                    } else {
+                        onSuccess();
+                    }
+                }
+            }
+
+        }
+
+        return new LibrariesLoader();
+
+    }
+
+
+})(window);
+
 },{"../utils/http":10}],5:[function(require,module,exports){
 (function($window) {
     'use strict';
 
 
     exports.config = {
-        preloadLibraries: [
-            "https://cdnjs.cloudflare.com/ajax/libs/react/0.14.3/react.js",
-            "https://cdnjs.cloudflare.com/ajax/libs/react/0.14.3/react-dom.js"
-        ],
-        angular: {
-            moduleNames: {
-                FEEDBACK_FACES: 'social-tools.feedbackFaces'
-            }
+        libraries: {
+            react: [
+                "https://cdnjs.cloudflare.com/ajax/libs/react/0.14.3/react.js",
+                "https://cdnjs.cloudflare.com/ajax/libs/react/0.14.3/react-dom.js"
+            ]
         },
-        css : {
-            url : "https://storage.googleapis.com/bbva-front.appspot.com/hpd.mobile/version/1.0.0/main.css"
+        css: {
+            url: "https://storage.googleapis.com/bbva-front.appspot.com/hpd.mobile/version/1.0.0/main.css"
         }
     };
 
-    exports.data = {};
-
 
 })(window);
+
 },{}],6:[function(require,module,exports){
 (function() {
-
     'use strict'
 
     var properties = require('./config/properties'),
         configurator = require('./config/config')(properties),
-        feedbackFaces = require('./services/feedbackFaces')(properties),
+        components = require('./services/components')(properties),
         utils = require('./utils/utils');
 
-    /****************************************************
-                BBVA - socialTools - Library
-
-    ******************************************************/
-    var ST = function() {
-
-        this.properties = properties;
-
-    };
-
-    /** Initial SocialTools function */
-    ST.prototype.init = function(){
-
-        configurator.loadLibraries(function(session) {
-
-            var BeerListClass = require('./components/BeerList');
-            var BeerList = new BeerListClass();
-
-            ReactDOM.render(React.createElement(BeerList, null), document.getElementById('content'));
-
-        }.bind(this), function(){
-            
-
-        }.bind(this), true);
-    };
-
-    /** @type {function} [description] */
-    ST.prototype.feedbackFaces = feedbackFaces;
-    
-
-    module.exports = new ST();
-
-})();
-},{"./components/BeerList":2,"./config/config":3,"./config/properties":5,"./services/feedbackFaces":8,"./utils/utils":11}],7:[function(require,module,exports){
-(function($window) {
-    'use strict'
-
-    var Display = function() {
-
-        this.body = document.body;
-        this.wrapper;
-
-    };
+    module.exports = function() {
 
 
-    /**
-     * Inject to hosted application hpd-mobile styles
-     * @param  {string} url [description]
-     * @return {[type]}     [description]
-     */
-    Display.prototype.loadCSS = function(url) {
-        var link = document.createElement('link')
-        link.setAttribute('rel', 'stylesheet')
-        link.setAttribute('type', 'text/css')
-        link.setAttribute('href', url)
-        document.getElementsByTagName('head')[0].appendChild(link);
+        /****************************************************
+                    BBVA - socialTools - Library
+
+        ******************************************************/
+        function ST() {
+
+        }
+
+        /** Initial SocialTools function */
+        ST.prototype.init = function( library ) {
+
+            /** If React has been loaded, we don't have to load this again */
+            if (typeof React === "object" && parseFloat(React.version) >= 0.14) {
+                components.registerAll( library );
+            /** If React hasn't been loaded, we have to load this synchronously */
+            } else {
+
+                components.registerAll( library );
+
+                configurator.loadLibraries(properties.config.libraries.react, function(session) {
+
+                    var event = new Event('reactLoaded');
+                    // Dispatch the event.
+                    document.dispatchEvent(event);
+
+                }.bind(this), function() {
+
+
+                }.bind(this), true);
+
+            }
+
+        };
+
+        return new ST();
     }
 
+})();
+},{"./config/config":3,"./config/properties":5,"./services/components":8,"./utils/utils":11}],7:[function(require,module,exports){
+(function() {
+    'use strict'
 
-    module.exports = new Display();
+    module.exports = function(constructorClass, properties) {
 
-})(window);
+        function Component(constructorClass) {
+
+            this.constructor = constructorClass;
+
+        };
+
+        Component.prototype.render = function(id_selector) {
+
+            if (properties.reactLoaded) {
+                this.react = new this.constructor();
+                ReactDOM.render(React.createElement(this.react), document.getElementById(id_selector));
+            } else {
+                document.addEventListener('reactLoaded', function() {
+                    this.react = new this.constructor();
+                    ReactDOM.render(React.createElement(this.react), document.getElementById(id_selector));
+                }.bind(this))
+            }
+
+
+        }
+
+        return new Component(constructorClass);
+
+    }
+
+})();
+
 },{}],8:[function(require,module,exports){
 (function() {
     'use strict'
 
-    //var template = require("../../templates/feedbackFaces.hbs");
+    module.exports = function(properties) {
 
+        /** Import of components classes **/
+        var FeedbackFacesClass = require('../components/feedbackFaces');
 
-    function feedbackFaces(properties) {
-
-        var isAnguarjs = typeof angular === 'object';
-
-
-        function createFeedbackFaces(parent) {
+        function Components() {
 
         }
 
-        function defineAngularjsDirective() {
 
-            angular.module(properties.angular.moduleNames.FEEDBACK_FACES, []);
-
-            app.run(['$templateCache', function($templateCache) {
-                //$templateCache.put('login.html', require('./login.html') );
-            }]);
-
-        }
-
-        function __init__() {
-
-            if (isAnguarjs) {
-                defineAngularjsDirective();
-            } else {
-                console.log('entrando');
-            }
+        Components.prototype.register = function() {
 
 
-        }
 
-        __init__();
 
+        };
+
+        Components.prototype.registerAll = function(library) {
+
+            library.feedbackFaces = new FeedbackFacesClass(properties);
+
+        };
+
+        return new Components();
 
     }
 
-    module.exports = feedbackFaces;
 
 
 })();
-},{}],9:[function(require,module,exports){
-(function() {
-    'use strict';
 
+},{"../components/feedbackFaces":2}],9:[function(require,module,exports){
+(function($window) {
+    'use strict'
 
-    /**
-     * Function to observe gps changes.
-     * @param  {[type]} onChange [description]
-     * @return {[type]}          [description]
-     */
-    exports.watch = function(onChange) {
+    module.exports = function() {
 
-        var gps = {};
+        function Display() {
 
-        var geoSuccess = function(data) {
+            this.body = document.body;
 
-            if (data && data.coords) {
-                gps.accuracy = data.coords.accuracy;
-                gps.altitude = data.coords.altitude;
-                gps.altitudeAccuracy = data.coords.altitudeAccuracy;
-                gps.heading = data.coords.heading;
-                gps.latitude = data.coords.latitude;
-                gps.longitude = data.coords.longitude;
-                gps.speed = data.coords.speed;
-            }
-
-            onChange(gps);
-        };
-
-        var geoError = function() {
-            console.log("Sorry, no position available.");
-            onChange(gps);
-        };
-
-        if (navigator.geolocation) {
-
-            var geoOptions = {
-                enableHighAccuracy: true,
-                maximumAge: 30000,
-                timeout: 10000
-            };
-
-            navigator.geolocation.watchPosition(geoSuccess, geoError, geoOptions);
-
-        } else {
-            onChange(gps);
         }
+
+        /**
+         * Inject to hosted application hpd-mobile styles
+         * @param  {string} url [description]
+         * @return {[type]}     [description]
+         */
+        Display.prototype.loadCSS = function(url) {
+            var link = document.createElement('link')
+            link.setAttribute('rel', 'stylesheet')
+            link.setAttribute('type', 'text/css')
+            link.setAttribute('href', url)
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+
+        return new Display();
     }
 
+})(window);
 
-})();
 },{}],10:[function(require,module,exports){
 (function(){
 	
@@ -646,12 +629,12 @@
 (function($window) {
     'use strict'
 
-    var socialTools = require('./core/core');
+    var socialtools = require('./core/core')();
 
     $window.bbva = $window.bbva || {};
     $window.bbva.socialtools = $window.bbva.socialtools || {};
 
-    socialTools.init($window.bbva.socialtools);
+    socialtools.init($window.bbva.socialtools);
 
 })(window);
 },{"./core/core":6}],13:[function(require,module,exports){

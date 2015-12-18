@@ -1,0 +1,78 @@
+.feedback-container{
+    width: 100%;
+    text-align: right;
+    margin-right: 10px;
+    z-index: 2;
+    float: right;
+}
+
+.feedback-title {
+	font-size: 15px;
+	color: #043f8e;
+}
+
+.faces-list {
+	width: 100%;
+	float: right;
+	margin-top: 20px;
+}
+
+.faces-list li{
+	display: inline-block;
+    margin-left: 20px;
+}
+
+.faces-list li:first-child{
+	margin-left: 0px;
+}
+
+.faces-list li span{
+	cursor: pointer;
+}
+
+.faces-list.rating li span{
+	cursor: default;
+}
+
+.face-sad-icon,
+.face-negative-icon{
+    width: 40px;
+    height: 40px;
+    display: inline-block;
+    background-position: -277px 0px;
+}
+
+.face-sad-icon:hover,
+.face-negative-icon.active{
+    background-position: -327px 0px;
+}
+
+.face-neutral-icon,
+.face-neutro-icon{
+    width: 40px;
+    height: 40px;
+    display: inline-block;
+    background-position: -277px -50px;
+}
+
+.face-neutral-icon:hover,
+.face-neutro-icon.active{
+    background-position: -327px -50px;
+}
+
+.face-happy-icon,
+.face-positive-icon{
+    width: 40px;
+    height: 40px;
+    display: inline-block;
+    background-position: -277px -100px;
+}
+
+.face-happy-icon:hover,
+.face-positive-icon.active{
+    background-position: -327px -100px;
+}
+
+.wr-sprite {
+    background-image: url('./wifiregister-sprite.png');
+    }
