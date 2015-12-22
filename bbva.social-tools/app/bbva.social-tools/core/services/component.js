@@ -10,7 +10,7 @@
 
         Component.prototype.render = function(selector_id) {
 
-            this.instance = new this.constructor(selector_id);
+            return new this.constructor(selector_id);
             
         }
 

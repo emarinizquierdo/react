@@ -154,120 +154,154 @@
 
         function FeedbackFaces(selector_id) {
 
-            this.container = document.getElementById(selector_id);
-            this.loader;
-            this.feedbackContainer;
-            this.feedbackTitle;
-            this.facesList;
-            this.faces = {};
+            /**
+             * Private Members
+             */
+            var container = document.getElementById(selector_id),
+                loader,
+                literal,
+                error,
+                feedbackContainer,
+                feedbackTitle,
+                facesList,
+                faces = {};
 
-            __init__.call(this);
-        }
+            /**
+             * Call the constructor
+             */
+            __init__()
 
-        function __init__() {
+            /**
+             * Constructor
+             */
+            function __init__() {
 
-            //
-            lang.addDictionary(dictionary);
+                //
+                lang.addDictionary(dictionary);
 
-            this.loader = new Loader();
-            this.literal = new Literal();
-            this.error = new Error();
+                loader = new Loader();
+                literal = new Literal();
+                error = new Error();
 
-            this.feedbackContainer = this.container.appendChild(new utils.element('div', ['class', 'feedback-container']));
-            this.feedbackContainer.appendChild(this.loader.element);
-            this.feedbackContainer.appendChild(this.error.element);
-            this.feedbackTitle = this.feedbackContainer.appendChild(this.literal.element);
-            this.feedbackTitle.stAddClass('feedback-title');
-            this.facesList = this.feedbackContainer.appendChild(new utils.element('ul', ['class', 'faces-list']));
+                feedbackContainer = container.appendChild(new utils.element('div', ['class', 'st-feedback-container']));
+                feedbackContainer.appendChild(loader.element);
+                feedbackContainer.appendChild(error.element);
+                feedbackTitle = feedbackContainer.appendChild(literal.element);
+                feedbackTitle.stAddClass('feedback-title');
+                facesList = feedbackContainer.appendChild(new utils.element('ul', ['class', 'faces-list']));
 
-            createFaces.call(this);
-            checkStatus.call(this);
+                createFaces();
+                checkStatus();
 
-        }
-
-        FeedbackFaces.prototype.lock = function(lock) {
-
-            for (var i = 0; i < MOODS.length; i++) {
-                this.faces[MOODS[i]].lock(lock);
             }
 
-        }
+            function lock(lock) {
 
-        function createFaces() {
+                for (var i = 0; i < MOODS.length; i++) {
+                    faces[MOODS[i]].lock(lock);
+                }
 
-            for (var i = 0; i < MOODS.length; i++) {
-                this.faces[MOODS[i]] = new FaceItem(MOODS[i]);
-                this.facesList.appendChild(this.faces[MOODS[i]].element);
-                this.faces[MOODS[i]].onClick = vote.bind(this);
             }
 
-        }
+            function createFaces() {
 
-        function checkStatus() {
+                for (var i = 0; i < MOODS.length; i++) {
+                    faces[MOODS[i]] = new FaceItem(MOODS[i]);
+                    facesList.appendChild(faces[MOODS[i]].element);
+                    faces[MOODS[i]].onClick = vote;
+                }
 
-            this.loader.show();
+            }
 
-            setTimeout(function() {
+            function checkStatus() {
 
-                Http.get('/app/bbva.social-tools/core/dummies/responseGet.json', function(data) {
+                loader.show();
 
-                    //If there's rating propertie, user has already voted
-                    if (data && data.rating) {
-                        this.lock(true);
-                        this.faces[RATING[data.rating]].setActive(true);
-                        this.loader.hide();
-                        this.literal.setText("FEEDBACK_DONE");
+                setTimeout(function() {
 
-                        //Unless, we have to unlock interaction
-                    } else {
-                        this.lock(false);
-                        this.loader.hide();
-                        this.literal.setText("FEEDBACK_QUIZ");
-                    }
+                    Http.get('http://localhost:8081/app/bbva.social-tools/core/dummies/responseGet.json', function(data) {
 
-                }.bind(this), function(data) {
+                        //If there's rating propertie, user has already voted
+                        if (data && data.rating) {
+                            lock(true);
+                            faces[RATING[data.rating]].setActive(true);
+                            loader.hide();
+                            literal.setText("FEEDBACK_DONE");
 
-                    this.lock(false);                    
-                    this.loader.hide();
-                    this.error.showError("GET_ERROR", true);
+                            //Unless, we have to unlock interaction
+                        } else {
+                            lock(false);
+                            loader.hide();
+                            literal.setText("FEEDBACK_QUIZ");
+                        }
 
-                }.bind(this));
+                    }, function(data) {
 
-            }.bind(this), 1500);
+                        lock(false);
+                        loader.hide();
+                        error.showError("GET_ERROR", true);
 
-        }
+                    });
+
+                }, 1500);
+
+            }
 
 
-        function vote(status) {
+            function vote(status) {
 
-            this.loader.show();
+                loader.show();
 
-            setTimeout(function() {
+                setTimeout(function() {
 
-                Http.get('/app/bbva.social-tools/core/dummies/responsePost.json', function(data) {
+                    Http.get('http://localhost:8081/app/bbva.social-tools/core/dummies/responsePost.json', function(data) {
 
-                    //If there's rating propertie, user has already voted
-                    if (data && data.rating) {
-                        this.lock(true);
-                        this.faces[RATING[data.rating]].setActive(true);
-                        this.loader.hide();
-                        this.literal.setText("FEEDBACK_DONE");
-                        //Unless, we have to unlock interaction
-                    } else {
-                        this.lock(false);
-                        this.loader.hide();
-                        this.literal.setText("FEEDBACK_QUIZ");
-                    }
+                        //If there's rating propertie, user has already voted
+                        if (data && data.rating) {
+                            lock(true);
+                            faces[RATING[data.rating]].setActive(true);
+                            loader.hide();
+                            literal.setText("FEEDBACK_DONE");
+                            //Unless, we have to unlock interaction
+                        } else {
+                            lock(false);
+                            loader.hide();
+                            literal.setText("FEEDBACK_QUIZ");
+                        }
 
-                }.bind(this), function() {
+                    }, function() {
 
-                    this.lock(false);
-                    this.loader.hide();
-                    this.error.showError("VOTE_ERROR");
+                        lock(false);
+                        loader.hide();
+                        error.showError("VOTE_ERROR");
 
-                }.bind(this));
+                    });
 
-            }.bind(this), 1500);
+                }, 1500);
+            }
+
+            this.align = function(align) {
+
+                switch (align) {
+                    case 'left':
+                        feedbackContainer.stAddClass('left');
+                        feedbackContainer.stRemoveClass('right');
+                        break;
+                    case 'right':
+                        feedbackContainer.stAddClass('right');
+                        feedbackContainer.stRemoveClass('left');
+                        break;
+
+                    default:
+                        feedbackContainer.stRemoveClass('left');
+                        feedbackContainer.stRemoveClass('right');
+
+                }
+
+                return this;
+
+            }
+
         }
 
         return new Component(FeedbackFaces)
@@ -370,18 +404,16 @@ arguments[4][5][0].apply(exports,arguments)
 (function() {
     'use strict';
 
-
     exports.config = {
         css: [
-            "https://storage.googleapis.com/bbva-front.appspot.com/hpd.mobile/version/1.0.0/main.css"
+        	//"http://localhost:8080/app/bbva.social-tools/css/feedback-faces.css", //localhost
+            "https://storage.googleapis.com/bbva-front.appspot.com/bbva.socialtools/1.0.0/css/feedback-faces.css"
         ]
     };
 
     exports.events = {
         LANG_CHANGED: "bbva.socialtools.langChanged"
     };
-
-
 
 })();
 },{}],9:[function(require,module,exports){
@@ -440,7 +472,7 @@ arguments[4][5][0].apply(exports,arguments)
 
         Component.prototype.render = function(selector_id) {
 
-            this.instance = new this.constructor(selector_id);
+            return new this.constructor(selector_id);
             
         }
 
@@ -487,8 +519,29 @@ arguments[4][5][0].apply(exports,arguments)
 	            "es_ES": {},
 	            "en_US": {}
 	        };
-
+	        
 	        this.words = this.DICTIONARY[this.currentLang];
+
+	        __init__.call(this);
+
+	    }
+
+	    function __init__(){
+
+	    	if(bbva && bbva.front){
+		    	//get Intranet language
+	            bbva.front.global.Invoke("getCurrentLanguage", function(data) {
+
+	                this.setLang(data.lang);
+
+	            }.bind(this));
+
+	            bbva.front.util.crossframe.Subscribe('bbva.front.changeLanguage', function(data) {
+
+					this.setLang(data.language);
+
+	            }.bind(this));
+	        }
 
 	    }
 

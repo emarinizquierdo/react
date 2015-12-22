@@ -11,8 +11,29 @@
 	            "es_ES": {},
 	            "en_US": {}
 	        };
-
+	        
 	        this.words = this.DICTIONARY[this.currentLang];
+
+	        __init__.call(this);
+
+	    }
+
+	    function __init__(){
+
+	    	if(bbva && bbva.front){
+		    	//get Intranet language
+	            bbva.front.global.Invoke("getCurrentLanguage", function(data) {
+
+	                this.setLang(data.lang);
+
+	            }.bind(this));
+
+	            bbva.front.util.crossframe.Subscribe('bbva.front.changeLanguage', function(data) {
+
+					this.setLang(data.language);
+
+	            }.bind(this));
+	        }
 
 	    }
 
