@@ -1,33 +1,24 @@
 (function() {
     'use strict'
 
-    module.exports = function(properties) {
+    module.exports = function(properties, lang) {
 
         /** Import of components classes **/
-        var FeedbackFacesClass = require('../components/feedbackFaces');
+        var FeedbackFacesClass = require('../components/feedbackFaces')(properties, lang);
 
         function Components() {
 
         }
 
+        Components.prototype.register = function(library) {
 
-        Components.prototype.register = function() {
-
-
-
+            library.feedbackFaces = FeedbackFacesClass;
 
         };
 
-        Components.prototype.registerAll = function(library) {
-
-            library.feedbackFaces = new FeedbackFacesClass(properties);
-
-        };
 
         return new Components();
 
     }
 
-
-
-})();
+})()

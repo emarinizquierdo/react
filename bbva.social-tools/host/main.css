@@ -1,78 +1,170 @@
-.feedback-container{
+.feedback-container {
+    position: relative;
     width: 100%;
-    text-align: right;
-    margin-right: 10px;
     z-index: 2;
-    float: right;
+    border: 1px dashed #E6E6E6;
+    text-align: center;
 }
 
 .feedback-title {
-	font-size: 15px;
-	color: #043f8e;
+    font-size: 15px;
+    color: #043f8e;
 }
 
 .faces-list {
-	width: 100%;
-	float: right;
-	margin-top: 20px;
+    width: 100%;
+    margin-top: 20px;
+    padding: 0;
 }
 
-.faces-list li{
-	display: inline-block;
-    margin-left: 20px;
+.faces-list li {
+    display: inline-block;
+    width: 33%;
 }
 
-.faces-list li:first-child{
-	margin-left: 0px;
+.faces-list li:first-child {
+    margin-left: 0px;
 }
 
-.faces-list li span{
-	cursor: pointer;
+.faces-list li span:not(.locked) {
+    cursor: pointer;
 }
 
-.faces-list.rating li span{
-	cursor: default;
+.faces-list.rating li span {
+    cursor: default;
 }
 
 .face-sad-icon,
-.face-negative-icon{
+.face-negative-icon {
     width: 40px;
     height: 40px;
     display: inline-block;
     background-position: -277px 0px;
 }
 
-.face-sad-icon:hover,
-.face-negative-icon.active{
+.face-sad-icon:not(.locked):hover,
+.face-sad-icon.active {
     background-position: -327px 0px;
 }
 
 .face-neutral-icon,
-.face-neutro-icon{
+.face-neutro-icon {
     width: 40px;
     height: 40px;
     display: inline-block;
     background-position: -277px -50px;
 }
 
-.face-neutral-icon:hover,
-.face-neutro-icon.active{
+.face-neutral-icon:not(.locked):hover,
+.face-neutral-icon.active {
     background-position: -327px -50px;
 }
 
 .face-happy-icon,
-.face-positive-icon{
+.face-positive-icon {
     width: 40px;
     height: 40px;
     display: inline-block;
     background-position: -277px -100px;
 }
 
-.face-happy-icon:hover,
-.face-positive-icon.active{
+.face-happy-icon:not(.locked):hover,
+.face-happy-icon.active {
     background-position: -327px -100px;
 }
 
 .wr-sprite {
     background-image: url('./wifiregister-sprite.png');
+}
+
+.activity-indicator {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    background-color: #ffffff;
+    z-index: 1;
+}
+
+.activity-indicator.hide {
+    display: none;
+}
+
+.activity-indicator .spin-wrapper {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    vertical-align: middle;
+}
+
+.spinner {
+    display: block;
+    background-image: url('./glyphicons-halflings.png');
+    background-position: 229px -24px;
+    width: 14px;
+    height: 14px;
+    margin: auto;
+}
+
+.spin {
+    -webkit-animation-name: gnotmaspin;
+    -webkit-animation-duration: 800ms;
+    -webkit-animation-iteration-count: infinite;
+    -webkit-animation-timing-function: linear;
+    -moz-animation-name: gnotmaspin;
+    -moz-animation-duration: 800ms;
+    -moz-animation-iteration-count: infinite;
+    -moz-animation-timing-function: linear;
+    -o-animation-name: gnotmaspin;
+    -o-animation-duration: 800ms;
+    -o-animation-iteration-count: infinite;
+    -o-animation-timing-function: linear;
+    -ms-animation-name: gnotmaspin;
+    -ms-animation-duration: 800ms;
+    -ms-animation-iteration-count: infinite;
+    -ms-animation-timing-function: linear;
+    animation-name: gnotmaspin;
+    animation-duration: 800ms;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+}
+
+@-ms-keyframes gnotmaspin {
+    from {
+        -ms-transform: rotate(0deg);
     }
+    to {
+        -ms-transform: rotate(360deg);
+    }
+}
+
+@-moz-keyframes gnotmaspin {
+    from {
+        -moz-transform: rotate(0deg);
+    }
+    to {
+        -moz-transform: rotate(360deg);
+    }
+}
+
+@-webkit-keyframes gnotmaspin {
+    from {
+        -webkit-transform: rotate(0deg);
+        -webkit-transform-origin: 50% 50%;
+    }
+    to {
+        -webkit-transform: rotate(360deg);
+        -webkit-transform-origin: 50% 50%;
+    }
+}
+
+@keyframes gnotmaspin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

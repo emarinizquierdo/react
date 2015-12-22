@@ -1,281 +1,347 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function() {
 
+        var utils = require('../../utils/utils');
+        
+        var ACTIVE_CLASS = 'active',
+            LOCKED_CLASS = 'locked';
 
-    module.exports = function() {
+        function FaceItem( mood ) {
 
-        /** @jsx React.DOM */
+            this.element = new utils.element('li');
+            this.spanElement;
+            this.active = false;
+            this.locked = true;
 
-        /*global require, module */
+            __init__.call(this, mood);
 
-        return React.createClass({
-            render: function() {
-                var classes = 'wr-sprite face-' + this.props.mood + '-icon';
+        }
 
-                return ( React.createElement("li", null, " ", React.createElement("span", {className: 
-                    classes
-                }, " ")) );
-            }
-        });
+        function __init__( mood ){
 
-    }
+            this.spanElement = new utils.element('span', ['class', 'wr-sprite']);
+            this.spanElement.stAddClass(' face-' + mood + '-icon');
+            this.spanElement.stAddClass(LOCKED_CLASS);
+            this.element.appendChild(this.spanElement);
 
+            setUserInteraction.call(this);
 
-})();
-
-},{}],2:[function(require,module,exports){
-(function() {
-
-    module.exports = function(properties) {
-
-        var Component = require('../services/component.js');
-
-        var constructor = function() {
-
-            var FaceItemClass = require('./faceItem.js');
-            var FaceItem = new FaceItemClass();
-
-            var FeedbackFaces = React.createClass({displayName: "FeedbackFaces",
-                getInitialState: function() {
-                    return {
-                        liked: false
-                    };
-                },
-                handleClick: function(event) {
-                    this.setState({
-                        liked: !this.state.liked
-                    });
-                },
-                render: function() {
-                    var text = this.state.liked ? 'like' : 'haven\'t liked';
-                    return ( React.createElement("div", {className: "feedback-container"}, 
-                        React.createElement("div", null, 
-                        React.createElement("span", {className: "feedback-title"}), 
-                        React.createElement("ul", {className: "faces-list"}, 
-                        React.createElement(FaceItem, {mood: "sad"}), 
-                        React.createElement(FaceItem, {mood: "neutral"}), 
-                        React.createElement(FaceItem, {mood: "happy"})
-                        ), " ")
-                        )
-                    );
-                }
-            });
-
-            return FeedbackFaces;
-        };
-
-        return new Component(constructor, properties);
-
-    }
-
-
-})();
-
-},{"../services/component.js":7,"./faceItem.js":1}],3:[function(require,module,exports){
-(function($window) {
-    'use strict'
-
-    module.exports = function(properties) {
-
-        var display = require('../services/display')();
+        }
 
         /**
-         * Config Class that provides methods to configure
-         * the HPD-Mobile library
-         * @param {object} properties
+         * Method to set active a faces. It will be only active if it is not locked.
+         * If active parameter is not passed, it will return active status
+         * @param {boolean} active [description]
          */
-        var Config = function() {
+        FaceItem.prototype.setActive = function( active ){
 
-
-            /** @type {object} Object used to load external libraries in synch mode */
-            this.librariesLoader = require('./librariesLoader')(properties);
-
-            /**
-             * Constructor of Config object.
-             * @return {[type]} [description]
-             */
-            function __init__() {
-
-                /** We have to set the environment and the remote connector to bbva-intranet */
-
-                var cssUrl = properties.config.css.url;
-                display.loadCSS(cssUrl);
-
+            if(typeof active === "undefined"){
+                return this.active;
+            }else{
+                this.active = active;
+                if(active){
+                    this.spanElement.stAddClass( ACTIVE_CLASS );
+                }else{
+                    this.spanElement.stRemoveClass( ACTIVE_CLASS );
+                }
             }
+        };
+
+        /**
+         * Method that locks a face interaction and styles
+         * @param  {boolean} lock [description]
+         * @return {[type]}      [description]
+         */
+        FaceItem.prototype.lock = function ( lock ){
+
+            if(typeof lock === "undefined"){
+                return this.locked;
+            }else{
+                this.locked = lock;
+                if(lock){
+                    this.spanElement.stAddClass( LOCKED_CLASS );
+                }else{
+                    this.spanElement.stRemoveClass( LOCKED_CLASS );
+                }
+                setUserInteraction.call(this, lock);
+            }
+
+        };
+
+        FaceItem.prototype.setOnClick = function( onClickFunction ){
+            this.onClick = onClickFunction;
+        }
+
+        function setUserInteraction( bind ){
+
+            this.spanElement.onclick= (!bind) ? function(){
+
+                this.onClick(this.active);
+
+            }.bind(this) : null;
+
+        }
+
+        module.exports = FaceItem;
+
+
+})();
+},{"../../utils/utils":15}],2:[function(require,module,exports){
+(function() {
+
+    module.exports = function(properties, lang) {
+
+        var Component = require('../../services/component');
+        var utils = require('../../utils/utils');
+        var Http = require('../../utils/http');
+        var FaceItem = require('./faceItem');
+        var Loader = require('../loader');
+        var Literal = require('../literal')(properties, lang);
+        var dictionary = require('./lang').dictionary;
+
+        var MOODS = ['sad', 'neutral', 'happy'];
+
+        var RATING = {
+            'NEGATIVE': 'sad',
+            'NEUTRAL': 'neutral',
+            'POSITIVE': 'happy'
+        };
+
+        function FeedbackFaces(selector_id) {
+
+            this.container = document.getElementById(selector_id);
+            this.loader;
+            this.feedbackContainer;
+            this.feedbackTitle;
+            this.facesList;
+            this.faces = {};
+
+            __init__.call(this);
+        }
+
+        function __init__() {
+
+            //
+            lang.addDictionary(dictionary);
+
+            this.feedbackContainer = this.container.appendChild(new utils.element('div', ['class', 'feedback-container']));
+            this.loader = new Loader();
+            this.feedbackContainer.appendChild(this.loader.element);
+            this.literal = new Literal();
+            this.feedbackTitle = this.feedbackContainer.appendChild(this.literal.element);
+            this.feedbackTitle.stAddClass('feedback-title');
+            this.facesList = this.feedbackContainer.appendChild(new utils.element('ul', ['class', 'faces-list']));
+
+            createFaces.call(this);
+            checkStatus.call(this);
+
+        }
+
+        FeedbackFaces.prototype.lock = function(lock) {
+
+            for (var i = 0; i < MOODS.length; i++) {
+                this.faces[MOODS[i]].lock(lock);
+            }
+
+        }
+
+        function createFaces() {
+
+            for (var i = 0; i < MOODS.length; i++) {
+                this.faces[MOODS[i]] = new FaceItem(MOODS[i]);
+                this.facesList.appendChild(this.faces[MOODS[i]].element);
+                this.faces[MOODS[i]].onClick = vote.bind(this);
+            }
+
+        }
+
+        function checkStatus() {
+
+            this.loader.show();
+
+            setTimeout(function() {
+
+                Http.get('/app/bbva.social-tools/core/dummies/responseGet.json', function(data) {
+
+                    //If there's rating propertie, user has already voted
+                    if (data && data.rating) {
+                        this.lock(true);
+                        this.faces[RATING[data.rating]].setActive(true);
+                        this.loader.hide();
+                        this.literal.setText("FEEDBACK_DONE");
+
+                        //Unless, we have to unlock interaction
+                    } else {
+                        this.lock(false);
+                        this.loader.hide();
+                        this.literal.setText("FEEDBACK_QUIZ");
+                    }
+
+                }.bind(this), function() {
+
+                    this.lock(false);
+
+                }.bind(this));
+
+            }.bind(this), 1500);
+
+        }
+
+
+        function vote(status) {
+
+            this.loader.show();
+
+            setTimeout(function() {
+
+                Http.get('/app/bbva.social-tools/core/dummies/responsePost.json', function(data) {
+
+                    //If there's rating propertie, user has already voted
+                    if (data && data.rating) {
+                        this.lock(true);
+                        this.faces[RATING[data.rating]].setActive(true);
+                        this.loader.hide();
+                        this.literal.setText("FEEDBACK_DONE");
+                        //Unless, we have to unlock interaction
+                    } else {
+                        this.lock(false);
+                        this.loader.hide();
+                        this.literal.setText("FEEDBACK_QUIZ");
+                    }
+
+                }.bind(this), function() {
+
+                    this.lock(false);
+
+                }.bind(this));
+
+            }.bind(this), 1500);
+        }
+
+        return new Component(FeedbackFaces)
+
+    }
+
+
+})();
+},{"../../services/component":9,"../../utils/http":14,"../../utils/utils":15,"../literal":5,"../loader":6,"./faceItem":1,"./lang":3}],3:[function(require,module,exports){
+(function(){
+	'use strict'
+
+	exports.dictionary = {
+		"es_ES" : {
+			FEEDBACK_QUIZ: "¿Te ha resultado fácil este proceso?",
+			FEEDBACK_DONE: "Ya has valorado este proceso:"
+		},
+		"en_US" : {
+			FEEDBACK_QUIZ: "Did you find this process easy?",
+			FEEDBACK_DONE: "You have already rated this process:"
+		}
+	}
+
+})()
+},{}],4:[function(require,module,exports){
+(function() {
+
+    module.exports = function(properties, lang) {
+
+        var utils = require('../../utils/utils');
+
+        function Literal() {
+
+            this.element = new utils.element('div');
 
             __init__.call(this);
 
-        };
+        }
 
-        /**
-         * Function that brings external libraries neccessary for HPD Module 
-         * @param  {Function} onSuccess [When libraries are loaded, we call to onSuccess]
-         * @param {Function} onError [When we fail laoding libraries or calling to session or properties, we call onError]
-         * @return {[type]}            [description]
-         */
-        Config.prototype.loadLibraries = function(libraries, onSuccess, onError, synchronously) {
-
-            this.librariesLoader.loadLibraries(libraries, onSuccess, onError, synchronously);
+        function __init__() {
 
         }
 
-        /**
-         * Public start method of HPD library to start the library
-         * @return {[type]} [description]
-         */
-        Config.prototype.start = function() {
-            if (typeof this.onStart == "function") {
-                this.onStart();
-            }
-        }
+        Literal.prototype.setText = function(text) {
 
-        return new Config();
+            this.element.innerHTML = lang.words[text];
 
-    }
-
-
-})(window);
-
-},{"../services/display":9,"./librariesLoader":4}],4:[function(require,module,exports){
-(function($window) {
-    'use strict'
-
-    module.exports = function(properties) {
-
-        /** @type {object} Helper library with http methods */
-        var http = require('../utils/http');
-
-        /**
-         * Libraries Loader class to load asynchrously js libraries before to start the application.
-         * @param {Function}
-         */
-        var LibrariesLoader = function() {
-
-            this.libraries = [];
+            document.addEventListener(properties.events.LANG_CHANGED, function() {
+                this.element.innerHTML = lang.words[text];
+            }.bind(this));
 
         };
 
-
-        /**
-         * Library to add to the list of libraries to load
-         * @param {[type]} src       [source to the library]
-         * @param {[type]} onSuccess [onSuccess callback]
-         */
-        LibrariesLoader.prototype.addLibrary = function(src, onSuccess, onError) {
-
-            if (typeof src == 'undefined') {
-                return;
-            }
-
-            var library = {
-                src: src,
-                script: null,
-                loaded: false
-            };
-
-            library.script = document.createElement('script');
-            library.script.onload = this.onLoad.bind(this, library, onSuccess, onError);
-            library.script.src = library.src;
-            document.getElementsByTagName('head')[0].appendChild(library.script);
-            this.libraries.push(library);
-        }
-
-        /**
-         * Function called when all libraries have been loaded. Furthermore, we have to be sure
-         * that "external/session" has been loaded too. In case it fails, we have to call onError
-         * @param  {[type]} onSuccess [description]
-         * @return {[type]}           [description]
-         */
-        LibrariesLoader.prototype.onLoad = function(library, onSuccess, onError) {
-
-            var i,
-                allLoaded = true;
-
-            library.loaded = true;
-
-            for (i = 0; i < this.libraries.length; i++) {
-                if (!this.libraries[i].loaded) {
-                    allLoaded = false;
-                }
-            }
-
-            if (allLoaded) {
-
-                onSuccess();
-
-                //onError();
-
-            }
-        }
-
-        /**
-         * @param  {string array} libraries [asynchronous js resources to load before HPD Angular Bootstrapping]
-         * @return {[type]}
-         */
-        LibrariesLoader.prototype.loadLibraries = function(libraries, onSuccess, onError, synchronusly) {
-
-            var libraries = libraries.slice();
-
-            if (!synchronusly) {
-                if (libraries && libraries.length > 0) {
-                    var i;
-                    for (i = 0; i < libraries.length; i++) {
-                        this.addLibrary(libraries[i], onSuccess, onError);
-                    }
-                }
-            } else {
-
-                recursiveLoad.call(this, onSuccess);
-
-                function recursiveLoad(onSuccess) {
-                    if (libraries.length > 0) {
-                        this.addLibrary(libraries[0], function() {
-                            libraries.splice(0, 1);
-                            recursiveLoad.call(this, onSuccess);
-                        }.bind(this))
-                    } else {
-                        onSuccess();
-                    }
-                }
-            }
-
-        }
-
-        return new LibrariesLoader();
+        return Literal;
 
     }
 
+})();
+},{"../../utils/utils":15}],5:[function(require,module,exports){
+arguments[4][4][0].apply(exports,arguments)
+},{"../../utils/utils":15,"dup":4}],6:[function(require,module,exports){
+(function() {
 
-})(window);
+    var Component = require('../../services/component');
+    var utils = require('../../utils/utils');
 
-},{"../utils/http":10}],5:[function(require,module,exports){
-(function($window) {
+    function Loader() {
+
+        this.element = new utils.element('div', ['class', 'activity-indicator']);
+
+        __init__.call(this);
+    }
+
+    function __init__() {
+
+        this.spinWrapper = this.element.appendChild(new utils.element('div', ['class', 'spin-wrapper']));
+        this.spin = this.spinWrapper.appendChild(new utils.element('span', ['class', 'glyphicons-sprite spinner spin']));
+
+    }
+
+    Loader.prototype.show = function() {
+    	this.element.appendChild(this.spinWrapper);
+        this.element.stRemoveClass('hide');
+
+    };
+
+    Loader.prototype.hide = function() {
+    	this.element.stAddClass('hide');
+        this.spinWrapper.remove();
+    };
+
+    module.exports = Loader;
+
+
+})();
+},{"../../services/component":9,"../../utils/utils":15}],7:[function(require,module,exports){
+(function() {
     'use strict';
 
 
     exports.config = {
-        libraries: {
-            react: [
-                "https://cdnjs.cloudflare.com/ajax/libs/react/0.14.3/react.js",
-                "https://cdnjs.cloudflare.com/ajax/libs/react/0.14.3/react-dom.js"
-            ]
-        },
-        css: {
-            url: "https://storage.googleapis.com/bbva-front.appspot.com/hpd.mobile/version/1.0.0/main.css"
-        }
+        css: [
+            "https://storage.googleapis.com/bbva-front.appspot.com/hpd.mobile/version/1.0.0/main.css"
+        ]
+    };
+
+    exports.events = {
+        LANG_CHANGED: "bbva.socialtools.langChanged"
     };
 
 
-})(window);
 
-},{}],6:[function(require,module,exports){
+})();
+},{}],8:[function(require,module,exports){
 (function() {
     'use strict'
 
+    require('./utils/extend');
+
     var properties = require('./config/properties'),
-        configurator = require('./config/config')(properties),
-        components = require('./services/components')(properties),
+        lang = require('./services/lang')(properties),
+        styles = require('./services/styles')(properties),
+        components = require('./services/components')(properties, lang),
         utils = require('./utils/utils');
+    
+    
 
     module.exports = function() {
 
@@ -291,38 +357,25 @@
         /** Initial SocialTools function */
         ST.prototype.init = function( library ) {
 
-            /** If React has been loaded, we don't have to load this again */
-            if (typeof React === "object" && parseFloat(React.version) >= 0.14) {
-                components.registerAll( library );
-            /** If React hasn't been loaded, we have to load this synchronously */
-            } else {
+            styles.load();
 
-                components.registerAll( library );
+            components.register( library );
 
-                configurator.loadLibraries(properties.config.libraries.react, function(session) {
-
-                    var event = new Event('reactLoaded');
-                    // Dispatch the event.
-                    document.dispatchEvent(event);
-
-                }.bind(this), function() {
-
-
-                }.bind(this), true);
-
+            library.setLang = function( language ){
+                lang.setLang(language);
             }
 
         };
+
 
         return new ST();
     }
 
 })();
-},{"./config/config":3,"./config/properties":5,"./services/components":8,"./utils/utils":11}],7:[function(require,module,exports){
+},{"./config/properties":7,"./services/components":10,"./services/lang":11,"./services/styles":12,"./utils/extend":13,"./utils/utils":15}],9:[function(require,module,exports){
 (function() {
     'use strict'
 
-    module.exports = function(constructorClass, properties) {
 
         function Component(constructorClass) {
 
@@ -330,67 +383,86 @@
 
         };
 
-        Component.prototype.render = function(id_selector) {
+        Component.prototype.render = function(selector_id) {
 
-            if (properties.reactLoaded) {
-                this.react = new this.constructor();
-                ReactDOM.render(React.createElement(this.react), document.getElementById(id_selector));
-            } else {
-                document.addEventListener('reactLoaded', function() {
-                    this.react = new this.constructor();
-                    ReactDOM.render(React.createElement(this.react), document.getElementById(id_selector));
-                }.bind(this))
-            }
-
-
+            this.instance = new this.constructor(selector_id);
+            
         }
 
-        return new Component(constructorClass);
+        module.exports = Component;
 
-    }
 
 })();
-
-},{}],8:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 (function() {
     'use strict'
 
-    module.exports = function(properties) {
+    module.exports = function(properties, lang) {
 
         /** Import of components classes **/
-        var FeedbackFacesClass = require('../components/feedbackFaces');
+        var FeedbackFacesClass = require('../components/feedbackFaces')(properties, lang);
 
         function Components() {
 
         }
 
+        Components.prototype.register = function(library) {
 
-        Components.prototype.register = function() {
-
-
-
+            library.feedbackFaces = FeedbackFacesClass;
 
         };
 
-        Components.prototype.registerAll = function(library) {
-
-            library.feedbackFaces = new FeedbackFacesClass(properties);
-
-        };
 
         return new Components();
 
     }
 
-
-
-})();
-
-},{"../components/feedbackFaces":2}],9:[function(require,module,exports){
-(function($window) {
+})()
+},{"../components/feedbackFaces":2}],11:[function(require,module,exports){
+(function() {
     'use strict'
 
-    module.exports = function() {
+    var utils = require('../utils/utils');
+
+    module.exports = function(properties){
+	    function Lang() {
+
+	        this.currentLang = "es_ES";
+	        this.DICTIONARY = {
+	            "es_ES": {},
+	            "en_US": {}
+	        };
+
+	        this.words = this.DICTIONARY[this.currentLang];
+
+	    }
+
+	    Lang.prototype.setLang = function(lang) {
+
+	        this.currentLang = (lang == "en_US") ? "en_US" : "es_ES";
+	        this.words = this.DICTIONARY[this.currentLang];
+	        var event = new Event(properties.events.LANG_CHANGED);
+	        // Dispatch the event.
+	        document.dispatchEvent(event);
+	    }
+
+	    Lang.prototype.addDictionary = function(subset) {
+
+	        utils.extend(this.DICTIONARY, subset);
+	        this.words = this.DICTIONARY[this.currentLang];
+
+	    };
+
+	    return new Lang();
+
+	}
+
+})();
+},{"../utils/utils":15}],12:[function(require,module,exports){
+(function() {
+    'use strict'
+
+    module.exports = function(properties) {
 
         function Display() {
 
@@ -403,20 +475,63 @@
          * @param  {string} url [description]
          * @return {[type]}     [description]
          */
-        Display.prototype.loadCSS = function(url) {
-            var link = document.createElement('link')
-            link.setAttribute('rel', 'stylesheet')
-            link.setAttribute('type', 'text/css')
-            link.setAttribute('href', url)
-            document.getElementsByTagName('head')[0].appendChild(link);
+        Display.prototype.load = function(url) {
+
+            for (var i = 0; i < properties.config.css.length; i++) {
+                var link = document.createElement('link')
+                link.setAttribute('rel', 'stylesheet')
+                link.setAttribute('type', 'text/css')
+                link.setAttribute('href', properties.config.css[i])
+                document.getElementsByTagName('head')[0].appendChild(link);
+            }
         }
 
         return new Display();
     }
 
-})(window);
+})();
+},{}],13:[function(require,module,exports){
+(function(Element) {
+	'use strict'
 
-},{}],10:[function(require,module,exports){
+    Element.prototype.stHasClass = function(className) {
+        return new RegExp(' ' + className + ' ').test(' ' + this.className + ' ');
+    };
+
+    Element.prototype.stAddClass = function(className) {
+        if (!this.stHasClass(className)) {
+            this.className += ' ' + className;
+        }
+        return this;
+    };
+
+    Element.prototype.stRemoveClass = function(className) {
+        var newClass = ' ' + this.className.replace(/[\t\r\n]/g, ' ') + ' ';
+        if (this.stHasClass(className)) {
+            while (newClass.indexOf(' ' + className + ' ') >= 0) {
+                newClass = newClass.replace(' ' + className + ' ', ' ');
+            }
+            this.className = newClass.replace(/^\s+|\s+$/g, ' ');
+        }
+        return this;
+    };
+
+    Element.prototype.stToggleClass = function(className) {
+        var newClass = ' ' + this.className.replace(/[\t\r\n]/g, " ") + ' ';
+        if (this.stHasClass(className)) {
+            while (newClass.indexOf(" " + className + " ") >= 0) {
+                newClass = newClass.replace(" " + className + " ", " ");
+            }
+            this.className = newClass.replace(/^\s+|\s+$/g, ' ');
+        } else {
+            this.className += ' ' + className;
+        }
+        return this;
+    };
+
+
+})(Element)
+},{}],14:[function(require,module,exports){
 (function(){
 	
 	 /**
@@ -465,136 +580,45 @@
     };
 
 })();
-},{}],11:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 (function() {
     'use strict';
 
-    exports.capitalize = function(s) {
-        return s.replace(/(^|\s)([a-z])/g, function(m, p1, p2) {
-            return p1 + p2.toUpperCase();
-        });
+    /**
+     * Method that creates a DOM element
+     * @param  {string} type  DOM type
+     * @param  {array} attrs Pair key-value to set as attribute
+     * @return {DOM element}
+     */
+    exports.element = function(type, attrs) {
+
+        var element = document.createElement(type);
+
+        if (attrs) {
+            element.setAttribute(attrs[0], attrs[1]);
+        }
+
+        return element;
+
     };
 
-    exports.replaceAccents = function(s) {
-        return s.replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u")
-            .replace(/Á/g, "A").replace(/É/g, "E").replace(/Í/g, "I").replace(/Ó/g, "O").replace(/Ú/g, "U");
-    };
-
-    //Funcion para codificar una cadena en formato hexadecimal
-    exports.a2hex = function(str) {
-        var result = "";
-        if (str) {
-            for (var i = 0; i < str.length; i++) {
-                result += str.charCodeAt(i).toString(16);
+    exports.extend = function(obj, extObj) {
+        if (arguments.length > 2) {
+            for (var a = 1; a < arguments.length; a++) {
+                extend(obj, arguments[a]);
+            }
+        } else {
+            for (var i in extObj) {
+                obj[i] = extObj[i];
             }
         }
-
-        //comprimimos la cadena hex para reducir su tamaño
-        result = exports.compress_hex(result);
-        return result;
-    };
-
-    //Funcion para decodificar una cadena en formato hexadecimal
-    exports.hex2a = function(hex) {
-        var result = "";
-        if (hex) {
-            //descomprimimos la cadena hexadecimal
-            hex = exports.decompress_hex(hex);
-            for (var i = 0; i < hex.length; i += 2) {
-                result += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
-            }
-        }
-        return result;
-    };
-
-    //funciones para reducir longitud de cadena url en hexadecimal
-    exports.compress_hex = function(cadena) {
-
-        var buffer = '';
-        var inputCadena = new Array();
-        var aux;
-        var dictionary = ['G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
-
-        inputCadena = cadena.split("");
-        while (inputCadena.length > 2) {
-            aux = inputCadena.shift() + '' + inputCadena.shift();
-            if (aux > 50 && aux < 92) {
-                buffer = buffer + '' + dictionary[aux - 51];
-            } else {
-                buffer = buffer + '' + aux;
-            }
-        }
-        while (inputCadena.length > 0) {
-            buffer = buffer + inputCadena.shift();
-        }
-
-        return buffer;
-
-    };
-
-    exports.decompress_hex = function(cadena) {
-
-        var buffer = '';
-        var inputCadena = new Array();
-        var indiceAux;
-        var aux;
-        var dictionary = ['G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
-
-        inputCadena = cadena.split("");
-
-        while (inputCadena.length) {
-            aux = inputCadena.shift();
-            indiceAux = exports.indexOf(dictionary, aux);
-            if (typeof indiceAux === "number") {
-                buffer = buffer + '' + (indiceAux + 51);
-            } else {
-                buffer = buffer + '' + aux;
-            }
-        }
-
-        return buffer;
-
+        return obj;
     };
 
     exports.indexOf = function(vector, s) {
         for (var x = 0; x < vector.length; x++)
             if (vector[x] == s) return x;
         return false;
-    };
-
-    /*
-     * Calcula si la url está contenida en un "javascript:window.open" para su apertura en una nueva ventana
-     * @param url
-     * @return {
-     *    url: url interna del window.open
-     *    external: true si la url contiene "javascript:window.open"
-     * }
-     */
-    exports.externalUrl = function(s) {
-
-        if (s.indexOf("javascript:window.open") == 0) {
-            return {
-                external: true,
-                url: s.substring(s.indexOf("http"), s.indexOf("','"))
-            }
-        } else {
-            return {
-                external: false,
-                url: s
-            }
-        }
-    };
-
-    exports.isLetter = function(s) {
-        return s && s.length === 1 && exports.replaceAccents(s).match(/[a-z,ñ]/i);
-    };
-
-    exports.isIpad = function(s) {
-        return navigator.userAgent.match(/iPad/i) != null;
-    };
-
-    exports.camelToDash = function(s) {
-        return s.replace(/\W+/g, '-').replace(/([a-z\d])([A-Z])/g, '$1-$2');
     };
 
     /**
@@ -625,7 +649,7 @@
 
 
 })();
-},{}],12:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 (function($window) {
     'use strict'
 
@@ -637,6 +661,6 @@
     socialtools.init($window.bbva.socialtools);
 
 })(window);
-},{"./core/core":6}],13:[function(require,module,exports){
+},{"./core/core":8}],17:[function(require,module,exports){
 
-},{}]},{},[1,2,3,4,5,6,7,8,9,10,11,12,13]);
+},{}]},{},[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]);

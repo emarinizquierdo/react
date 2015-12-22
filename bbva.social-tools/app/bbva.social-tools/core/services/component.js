@@ -1,7 +1,6 @@
 (function() {
     'use strict'
 
-    module.exports = function(constructorClass, properties) {
 
         function Component(constructorClass) {
 
@@ -9,23 +8,13 @@
 
         };
 
-        Component.prototype.render = function(id_selector) {
+        Component.prototype.render = function(selector_id) {
 
-            if (properties.reactLoaded) {
-                this.react = new this.constructor();
-                ReactDOM.render(React.createElement(this.react), document.getElementById(id_selector));
-            } else {
-                document.addEventListener('reactLoaded', function() {
-                    this.react = new this.constructor();
-                    ReactDOM.render(React.createElement(this.react), document.getElementById(id_selector));
-                }.bind(this))
-            }
-
-
+            this.instance = new this.constructor(selector_id);
+            
         }
 
-        return new Component(constructorClass);
+        module.exports = Component;
 
-    }
 
 })();

@@ -1,132 +1,41 @@
 (function() {
     'use strict';
 
-    exports.capitalize = function(s) {
-        return s.replace(/(^|\s)([a-z])/g, function(m, p1, p2) {
-            return p1 + p2.toUpperCase();
-        });
+    /**
+     * Method that creates a DOM element
+     * @param  {string} type  DOM type
+     * @param  {array} attrs Pair key-value to set as attribute
+     * @return {DOM element}
+     */
+    exports.element = function(type, attrs) {
+
+        var element = document.createElement(type);
+
+        if (attrs) {
+            element.setAttribute(attrs[0], attrs[1]);
+        }
+
+        return element;
+
     };
 
-    exports.replaceAccents = function(s) {
-        return s.replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u")
-            .replace(/Á/g, "A").replace(/É/g, "E").replace(/Í/g, "I").replace(/Ó/g, "O").replace(/Ú/g, "U");
-    };
-
-    //Funcion para codificar una cadena en formato hexadecimal
-    exports.a2hex = function(str) {
-        var result = "";
-        if (str) {
-            for (var i = 0; i < str.length; i++) {
-                result += str.charCodeAt(i).toString(16);
+    exports.extend = function(obj, extObj) {
+        if (arguments.length > 2) {
+            for (var a = 1; a < arguments.length; a++) {
+                extend(obj, arguments[a]);
+            }
+        } else {
+            for (var i in extObj) {
+                obj[i] = extObj[i];
             }
         }
-
-        //comprimimos la cadena hex para reducir su tamaño
-        result = exports.compress_hex(result);
-        return result;
-    };
-
-    //Funcion para decodificar una cadena en formato hexadecimal
-    exports.hex2a = function(hex) {
-        var result = "";
-        if (hex) {
-            //descomprimimos la cadena hexadecimal
-            hex = exports.decompress_hex(hex);
-            for (var i = 0; i < hex.length; i += 2) {
-                result += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
-            }
-        }
-        return result;
-    };
-
-    //funciones para reducir longitud de cadena url en hexadecimal
-    exports.compress_hex = function(cadena) {
-
-        var buffer = '';
-        var inputCadena = new Array();
-        var aux;
-        var dictionary = ['G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
-
-        inputCadena = cadena.split("");
-        while (inputCadena.length > 2) {
-            aux = inputCadena.shift() + '' + inputCadena.shift();
-            if (aux > 50 && aux < 92) {
-                buffer = buffer + '' + dictionary[aux - 51];
-            } else {
-                buffer = buffer + '' + aux;
-            }
-        }
-        while (inputCadena.length > 0) {
-            buffer = buffer + inputCadena.shift();
-        }
-
-        return buffer;
-
-    };
-
-    exports.decompress_hex = function(cadena) {
-
-        var buffer = '';
-        var inputCadena = new Array();
-        var indiceAux;
-        var aux;
-        var dictionary = ['G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
-
-        inputCadena = cadena.split("");
-
-        while (inputCadena.length) {
-            aux = inputCadena.shift();
-            indiceAux = exports.indexOf(dictionary, aux);
-            if (typeof indiceAux === "number") {
-                buffer = buffer + '' + (indiceAux + 51);
-            } else {
-                buffer = buffer + '' + aux;
-            }
-        }
-
-        return buffer;
-
+        return obj;
     };
 
     exports.indexOf = function(vector, s) {
         for (var x = 0; x < vector.length; x++)
             if (vector[x] == s) return x;
         return false;
-    };
-
-    /*
-     * Calcula si la url está contenida en un "javascript:window.open" para su apertura en una nueva ventana
-     * @param url
-     * @return {
-     *    url: url interna del window.open
-     *    external: true si la url contiene "javascript:window.open"
-     * }
-     */
-    exports.externalUrl = function(s) {
-
-        if (s.indexOf("javascript:window.open") == 0) {
-            return {
-                external: true,
-                url: s.substring(s.indexOf("http"), s.indexOf("','"))
-            }
-        } else {
-            return {
-                external: false,
-                url: s
-            }
-        }
-    };
-
-    exports.isLetter = function(s) {
-        return s && s.length === 1 && exports.replaceAccents(s).match(/[a-z,ñ]/i);
-    };
-
-    exports.isIpad = function(s) {
-        return navigator.userAgent.match(/iPad/i) != null;
-    };
-
-    exports.camelToDash = function(s) {
-        return s.replace(/\W+/g, '-').replace(/([a-z\d])([A-Z])/g, '$1-$2');
     };
 
     /**
