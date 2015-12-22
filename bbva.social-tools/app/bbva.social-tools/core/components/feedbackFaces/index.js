@@ -8,6 +8,7 @@
         var FaceItem = require('./faceItem');
         var Loader = require('../loader');
         var Literal = require('../literal')(properties, lang);
+        var Error = require('./error')(properties, lang);
         var dictionary = require('./lang').dictionary;
 
         var MOODS = ['sad', 'neutral', 'happy'];
@@ -35,10 +36,13 @@
             //
             lang.addDictionary(dictionary);
 
-            this.feedbackContainer = this.container.appendChild(new utils.element('div', ['class', 'feedback-container']));
             this.loader = new Loader();
-            this.feedbackContainer.appendChild(this.loader.element);
             this.literal = new Literal();
+            this.error = new Error();
+
+            this.feedbackContainer = this.container.appendChild(new utils.element('div', ['class', 'feedback-container']));
+            this.feedbackContainer.appendChild(this.loader.element);
+            this.feedbackContainer.appendChild(this.error.element);
             this.feedbackTitle = this.feedbackContainer.appendChild(this.literal.element);
             this.feedbackTitle.stAddClass('feedback-title');
             this.facesList = this.feedbackContainer.appendChild(new utils.element('ul', ['class', 'faces-list']));
@@ -88,9 +92,11 @@
                         this.literal.setText("FEEDBACK_QUIZ");
                     }
 
-                }.bind(this), function() {
+                }.bind(this), function(data) {
 
-                    this.lock(false);
+                    this.lock(false);                    
+                    this.loader.hide();
+                    this.error.showError("GET_ERROR", true);
 
                 }.bind(this));
 
@@ -123,6 +129,8 @@
                 }.bind(this), function() {
 
                     this.lock(false);
+                    this.loader.hide();
+                    this.error.showError("VOTE_ERROR");
 
                 }.bind(this));
 

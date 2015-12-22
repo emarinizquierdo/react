@@ -21,20 +21,15 @@
         xmlhttp.onreadystatechange = function() {
             if (xmlhttp.readyState == XMLHttpRequest.DONE) {
                 if (xmlhttp.status == 200) {
-                    try {
-                        var parsedResponse = JSON.parse(xmlhttp.responseText);
-                    } catch (e) {
-                        console.log(e);
-                        console.log("Be sure you have mapped bbva-intranet services in your web.xml file");
+                    try{
+                        var parsed = JSON.parse(xmlhttp.responseText);
+                        onSuccess(parsed);
+                    }catch(e){
+                        console.log("xmlhttp error")
                         onError();
                     }
-
-                    onSuccess(parsedResponse);
-                } else if (xmlhttp.status == 400) {
-                    console.log("Be sure you have mapped bbva-intranet services in your web.xml file");
-                    onError();
                 } else {
-                    console.log("Be sure you have mapped bbva-intranet services in your web.xml file");
+                    console.log("xmlhttp error")
                     onError();
                 }
             }

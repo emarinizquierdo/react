@@ -1,6 +1,50 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function() {
 
+    module.exports = function(properties, lang) {
+
+        var utils = require('../../utils/utils');
+        var Literal = require('../literal')(properties, lang);
+
+        function Error() {
+
+            this.element = new utils.element('div', ['class', 'error-container']);
+
+            __init__.call(this);
+        }
+
+        function __init__() {
+
+            this.literal = new Literal();
+
+            this.element.stAddClass('hide');
+            this.errorTextWrapper = this.element.appendChild(new utils.element('div', ['class', 'error-text-wrapper']));
+            this.errorText = this.errorTextWrapper.appendChild(this.literal.element);
+            this.errorText.stAddClass('error-text');
+
+        }
+
+        Error.prototype.showError = function( text, keep) {
+
+            this.element.stRemoveClass('hide');
+            this.literal.setText(text);
+
+            if(!keep){
+	            setTimeout(function(){
+	            	this.element.stAddClass('hide');
+	            }.bind(this), 3000);
+	        }
+
+        };
+
+        return Error;
+
+    }
+
+})();
+},{"../../utils/utils":16,"../literal":6}],2:[function(require,module,exports){
+(function() {
+
         var utils = require('../../utils/utils');
         
         var ACTIVE_CLASS = 'active',
@@ -86,7 +130,7 @@
 
 
 })();
-},{"../../utils/utils":15}],2:[function(require,module,exports){
+},{"../../utils/utils":16}],3:[function(require,module,exports){
 (function() {
 
     module.exports = function(properties, lang) {
@@ -97,6 +141,7 @@
         var FaceItem = require('./faceItem');
         var Loader = require('../loader');
         var Literal = require('../literal')(properties, lang);
+        var Error = require('./error')(properties, lang);
         var dictionary = require('./lang').dictionary;
 
         var MOODS = ['sad', 'neutral', 'happy'];
@@ -124,10 +169,13 @@
             //
             lang.addDictionary(dictionary);
 
-            this.feedbackContainer = this.container.appendChild(new utils.element('div', ['class', 'feedback-container']));
             this.loader = new Loader();
-            this.feedbackContainer.appendChild(this.loader.element);
             this.literal = new Literal();
+            this.error = new Error();
+
+            this.feedbackContainer = this.container.appendChild(new utils.element('div', ['class', 'feedback-container']));
+            this.feedbackContainer.appendChild(this.loader.element);
+            this.feedbackContainer.appendChild(this.error.element);
             this.feedbackTitle = this.feedbackContainer.appendChild(this.literal.element);
             this.feedbackTitle.stAddClass('feedback-title');
             this.facesList = this.feedbackContainer.appendChild(new utils.element('ul', ['class', 'faces-list']));
@@ -177,9 +225,11 @@
                         this.literal.setText("FEEDBACK_QUIZ");
                     }
 
-                }.bind(this), function() {
+                }.bind(this), function(data) {
 
-                    this.lock(false);
+                    this.lock(false);                    
+                    this.loader.hide();
+                    this.error.showError("GET_ERROR", true);
 
                 }.bind(this));
 
@@ -212,6 +262,8 @@
                 }.bind(this), function() {
 
                     this.lock(false);
+                    this.loader.hide();
+                    this.error.showError("VOTE_ERROR");
 
                 }.bind(this));
 
@@ -224,23 +276,27 @@
 
 
 })();
-},{"../../services/component":9,"../../utils/http":14,"../../utils/utils":15,"../literal":5,"../loader":6,"./faceItem":1,"./lang":3}],3:[function(require,module,exports){
+},{"../../services/component":10,"../../utils/http":15,"../../utils/utils":16,"../literal":6,"../loader":7,"./error":1,"./faceItem":2,"./lang":4}],4:[function(require,module,exports){
 (function(){
 	'use strict'
 
 	exports.dictionary = {
 		"es_ES" : {
 			FEEDBACK_QUIZ: "¿Te ha resultado fácil este proceso?",
-			FEEDBACK_DONE: "Ya has valorado este proceso:"
+			FEEDBACK_DONE: "Ya has valorado este proceso:",
+			VOTE_ERROR : "Error al votar. Por favor, inténtalo más tarde.",
+			GET_ERROR : "Lo sentimos, ha habido un problema."
 		},
 		"en_US" : {
 			FEEDBACK_QUIZ: "Did you find this process easy?",
-			FEEDBACK_DONE: "You have already rated this process:"
+			FEEDBACK_DONE: "You have already rated this process:",
+			VOTE_ERROR : "There has been an error. Please, try again later.",
+			GET_ERROR : "Sorry, there has been a problem."
 		}
 	}
 
 })()
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 (function() {
 
     module.exports = function(properties, lang) {
@@ -274,12 +330,11 @@
     }
 
 })();
-},{"../../utils/utils":15}],5:[function(require,module,exports){
-arguments[4][4][0].apply(exports,arguments)
-},{"../../utils/utils":15,"dup":4}],6:[function(require,module,exports){
+},{"../../utils/utils":16}],6:[function(require,module,exports){
+arguments[4][5][0].apply(exports,arguments)
+},{"../../utils/utils":16,"dup":5}],7:[function(require,module,exports){
 (function() {
 
-    var Component = require('../../services/component');
     var utils = require('../../utils/utils');
 
     function Loader() {
@@ -290,9 +345,9 @@ arguments[4][4][0].apply(exports,arguments)
     }
 
     function __init__() {
-
+        
         this.spinWrapper = this.element.appendChild(new utils.element('div', ['class', 'spin-wrapper']));
-        this.spin = this.spinWrapper.appendChild(new utils.element('span', ['class', 'glyphicons-sprite spinner spin']));
+        this.spin = this.spinWrapper.appendChild(new utils.element('span', ['class', 'wr-sprite spinner spin']));
 
     }
 
@@ -311,7 +366,7 @@ arguments[4][4][0].apply(exports,arguments)
 
 
 })();
-},{"../../services/component":9,"../../utils/utils":15}],7:[function(require,module,exports){
+},{"../../utils/utils":16}],8:[function(require,module,exports){
 (function() {
     'use strict';
 
@@ -329,7 +384,7 @@ arguments[4][4][0].apply(exports,arguments)
 
 
 })();
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 (function() {
     'use strict'
 
@@ -372,7 +427,7 @@ arguments[4][4][0].apply(exports,arguments)
     }
 
 })();
-},{"./config/properties":7,"./services/components":10,"./services/lang":11,"./services/styles":12,"./utils/extend":13,"./utils/utils":15}],9:[function(require,module,exports){
+},{"./config/properties":8,"./services/components":11,"./services/lang":12,"./services/styles":13,"./utils/extend":14,"./utils/utils":16}],10:[function(require,module,exports){
 (function() {
     'use strict'
 
@@ -393,7 +448,7 @@ arguments[4][4][0].apply(exports,arguments)
 
 
 })();
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 (function() {
     'use strict'
 
@@ -418,7 +473,7 @@ arguments[4][4][0].apply(exports,arguments)
     }
 
 })()
-},{"../components/feedbackFaces":2}],11:[function(require,module,exports){
+},{"../components/feedbackFaces":3}],12:[function(require,module,exports){
 (function() {
     'use strict'
 
@@ -458,7 +513,7 @@ arguments[4][4][0].apply(exports,arguments)
 	}
 
 })();
-},{"../utils/utils":15}],12:[function(require,module,exports){
+},{"../utils/utils":16}],13:[function(require,module,exports){
 (function() {
     'use strict'
 
@@ -490,7 +545,7 @@ arguments[4][4][0].apply(exports,arguments)
     }
 
 })();
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 (function(Element) {
 	'use strict'
 
@@ -531,7 +586,7 @@ arguments[4][4][0].apply(exports,arguments)
 
 
 })(Element)
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 (function(){
 	
 	 /**
@@ -555,20 +610,15 @@ arguments[4][4][0].apply(exports,arguments)
         xmlhttp.onreadystatechange = function() {
             if (xmlhttp.readyState == XMLHttpRequest.DONE) {
                 if (xmlhttp.status == 200) {
-                    try {
-                        var parsedResponse = JSON.parse(xmlhttp.responseText);
-                    } catch (e) {
-                        console.log(e);
-                        console.log("Be sure you have mapped bbva-intranet services in your web.xml file");
+                    try{
+                        var parsed = JSON.parse(xmlhttp.responseText);
+                        onSuccess(parsed);
+                    }catch(e){
+                        console.log("xmlhttp error")
                         onError();
                     }
-
-                    onSuccess(parsedResponse);
-                } else if (xmlhttp.status == 400) {
-                    console.log("Be sure you have mapped bbva-intranet services in your web.xml file");
-                    onError();
                 } else {
-                    console.log("Be sure you have mapped bbva-intranet services in your web.xml file");
+                    console.log("xmlhttp error")
                     onError();
                 }
             }
@@ -580,7 +630,7 @@ arguments[4][4][0].apply(exports,arguments)
     };
 
 })();
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 (function() {
     'use strict';
 
@@ -649,7 +699,7 @@ arguments[4][4][0].apply(exports,arguments)
 
 
 })();
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 (function($window) {
     'use strict'
 
@@ -661,6 +711,4 @@ arguments[4][4][0].apply(exports,arguments)
     socialtools.init($window.bbva.socialtools);
 
 })(window);
-},{"./core/core":8}],17:[function(require,module,exports){
-
-},{}]},{},[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]);
+},{"./core/core":9}]},{},[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]);

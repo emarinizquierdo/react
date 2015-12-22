@@ -1,6 +1,5 @@
 (function() {
 
-    var Component = require('../../services/component');
     var utils = require('../../utils/utils');
 
     function Loader() {
@@ -11,9 +10,9 @@
     }
 
     function __init__() {
-
+        
         this.spinWrapper = this.element.appendChild(new utils.element('div', ['class', 'spin-wrapper']));
-        this.spin = this.spinWrapper.appendChild(new utils.element('span', ['class', 'glyphicons-sprite spinner spin']));
+        this.spin = this.spinWrapper.appendChild(new utils.element('span', ['class', 'wr-sprite spinner spin']));
 
     }
 
